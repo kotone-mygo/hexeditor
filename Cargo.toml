@@ -1,0 +1,3 @@
+[workspace]
+members = ["hexcore", "hexview"]
+resolver = "2"
