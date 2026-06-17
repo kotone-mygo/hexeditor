@@ -206,7 +206,7 @@ impl App {
             }
 
             KeyCode::Char('x') => {
-                if self.buffer.len() > 0 {
+                if !self.buffer.is_empty() {
                     if self.nibble_mode {
                         let offset = self.cursor.offset;
                         let nibble = self.cursor.sub_offset;
@@ -220,7 +220,7 @@ impl App {
                             new_bytes: new_tail,
                         };
                         self.undo.push(cmd);
-                        if self.cursor.offset >= self.buffer.len() && self.buffer.len() > 0 {
+                        if self.cursor.offset >= self.buffer.len() && !self.buffer.is_empty() {
                             self.cursor.offset = self.buffer.len() - 1;
                         }
                     } else {
@@ -260,7 +260,7 @@ impl App {
                         };
                         cmd.apply(&mut self.buffer)?;
                         self.undo.push(cmd);
-                        if self.cursor.offset >= self.buffer.len() && self.buffer.len() > 0 {
+                        if self.cursor.offset >= self.buffer.len() && !self.buffer.is_empty() {
                             self.cursor.offset = self.buffer.len() - 1;
                         }
                     }

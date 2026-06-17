@@ -49,14 +49,11 @@ impl Searcher {
         for (i, window) in data.windows(pat_len).enumerate() {
             let mut matched = true;
             for (j, &byte) in window.iter().enumerate() {
-                match pat[j] {
-                    Some(expected) => {
-                        if byte != expected {
-                            matched = false;
-                            break;
-                        }
+                if let Some(expected) = pat[j] {
+                    if byte != expected {
+                        matched = false;
+                        break;
                     }
-                    None => {}
                 }
             }
             if matched {

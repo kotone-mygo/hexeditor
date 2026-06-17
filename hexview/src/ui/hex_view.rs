@@ -16,7 +16,7 @@ pub fn render_hex_view(frame: &mut Frame, area: Rect, app: &App) {
         0
     };
     let half = (area.height / 2) as u64;
-    let start_row = if current_row > half { current_row - half } else { 0 };
+    let start_row = current_row.saturating_sub(half);
 
     let mut lines = Vec::new();
 

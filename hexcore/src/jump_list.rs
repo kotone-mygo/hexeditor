@@ -44,9 +44,8 @@ impl JumpList {
             self.index += 1;
             Some(self.entries[self.index])
         } else if self.index + 1 == self.entries.len() {
-            self.saved_target.take().map(|pos| {
+            self.saved_target.take().inspect(|_| {
                 self.index += 1;
-                pos
             })
         } else {
             None

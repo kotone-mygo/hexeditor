@@ -48,6 +48,10 @@ impl ByteBuffer {
         self.data.len() as u64
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
     pub fn read(&self, offset: u64, len: usize) -> Result<&[u8], String> {
         let size = self.data.len() as u64;
         if offset >= size {
