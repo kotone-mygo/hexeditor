@@ -1,5 +1,7 @@
 # hexeditor
 
+[![CI](https://github.com/kotone-mygo/hexeditor/actions/workflows/ci.yml/badge.svg)](https://github.com/kotone-mygo/hexeditor/actions/workflows/ci.yml)
+
 A terminal-based hex editor built with Rust, [ratatui](https://github.com/ratatui-org/ratatui), and [crossterm](https://github.com/crossterm-rs/crossterm).
 
 ## Features
@@ -30,12 +32,12 @@ cd hexeditor
 cargo build --release
 ```
 
-The binary is at `target/release/hexview`.
+The binary is at `target/release/hedit`.
 
 ### Run
 
 ```bash
-hexview <file>
+hedit <file>
 ```
 
 Or with `cargo`:
@@ -51,7 +53,7 @@ cargo run -- <file>
 | Key | Action |
 |-----|--------|
 | `h`/`←` `l`/`→` `j`/`↓` `k`/`↑` | Move cursor |
-| `0` | Go to row start |
+| `0` / `$` | Go to row start / end |
 | `gg` / `G` | Go to top / bottom |
 | `Ctrl-D` / `Ctrl-U` | Page down / up |
 | `i` / `a` | Insert at cursor / after cursor |
@@ -143,8 +145,9 @@ Settings are persisted to `~/.config/hexview/config.json`. Example:
 
 Options:
 - `bytes_per_row` — Number of bytes displayed per row (default: `16`)
-- `max_undo_depth` — Maximum undo history entries (default: `500`)
+- `max_undo_depth` — Maximum undo history entries (default: `5000`)
 - `show_ascii` — Show ASCII panel alongside hex (default: `true`)
+- `mmap_threshold_mb` — File size threshold in MB for memory-mapped I/O (default: `500`)
 - `use_overwrite_mode` — Start in overwrite mode instead of insert (default: `false`)
 
 ## License

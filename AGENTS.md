@@ -21,8 +21,8 @@ Pure data/logic, no terminal dependencies.
 
 | Module | Purpose |
 |--------|---------|
-| `buffer.rs` | `ByteBuffer` — owns raw bytes, read/write/insert/delete, nibble operations |
-| `cursor.rs` | `Cursor` — offset, sub_offset, selection state, movement helpers |
+| `buffer.rs` | `ByteBuffer` — owns raw bytes, read/write/insert/delete, nibble operations, `is_empty()` |
+| `cursor.rs` | `Cursor` — offset, sub_offset, selection state, movement helpers, `current_row_end()` for `$` key |
 | `commands.rs` | `EditCommand` enum (`Overwrite`, `Insert`, `Delete`) — command pattern |
 | `undo.rs` | `UndoManager` — two-stack undo/redo, returns offset after undo/redo for cursor jump |
 | `jump_list.rs` | `JumpList` — position history for `Ctrl-O`/`Tab` navigation |
@@ -32,6 +32,8 @@ Pure data/logic, no terminal dependencies.
 | `lib.rs` | Re-exports public API |
 
 ### crate `hexview` (`hexview/src/`)
+
+Binary name: `hedit` (declared in `Cargo.toml` `[[bin]]`).
 
 Terminal UI (depends on `hexcore`, `ratatui`, `crossterm`, `unicode-width`).
 
