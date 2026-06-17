@@ -89,6 +89,14 @@ impl Cursor {
         }
         (self.offset / self.bytes_per_row) * self.bytes_per_row
     }
+
+    pub fn current_row_end(&self, file_size: u64) -> u64 {
+        if self.bytes_per_row == 0 || file_size == 0 {
+            return self.offset;
+        }
+        let row_end = self.current_row_start() + self.bytes_per_row - 1;
+        row_end.min(file_size - 1)
+    }
 }
 
 #[cfg(test)]
@@ -160,5 +168,45 @@ mod tests {
         assert_eq!(cursor.offset, 16);
         cursor.move_up(100);
         assert_eq!(cursor.offset, 0);
+    }
+
+    #[test]
+    fn test_current_row_end_mid_row() {
+        let cursor = Cursor {
+            offset: 20,
+            bytes_per_row: 16,
+            sub_offset: 0,
+            selection_anchor: None,
+            selection_sub_anchor: None,
+            selection_mode: SelectionMode::None,
+        };
+        assert_eq!(cursor.current_row_end(100), 31);
+    }
+
+    #[test]
+    fn test_current_row_end_clamps_to_eof() {
+        let cursor = Cursor {
+            offset: 20,
+            bytes_per_row: 16,
+            sub_offset: 0,
+            selection_anchor: None,
+            selection_sub_anchor: None,
+            selection_mode: SelectionMode::None,
+        };
+        // row would end at 31 but file only has 22 bytes
+        assert_eq!(cursor.current_row_end(22), 21);
+    }
+
+    #[test]
+    fn test_current_row_end_empty_file() {
+        let cursor = Cursor {
+            offset: 0,
+            bytes_per_row: 16,
+            sub_offset: 0,
+            selection_anchor: None,
+            selection_sub_anchor: None,
+            selection_mode: SelectionMode::None,
+        };
+        assert_eq!(cursor.current_row_end(0), 0);
     }
 }

@@ -35,8 +35,8 @@ pub fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
             String::new()
         };
 
-    let endian_preview = if app.cursor.offset + 8 <= app.buffer.len() {
-        if let Ok(bytes) = app.buffer.read(app.cursor.offset, 8) {
+    let endian_preview = if app.cursor.offset + 2 <= app.buffer.len() {
+        if let Ok(bytes) = app.buffer.read(app.cursor.offset, 2) {
             let u16_le = u16::from_le_bytes([bytes[0], bytes[1]]);
             let u16_be = u16::from_be_bytes([bytes[0], bytes[1]]);
             format!(" u16 LE:0x{:04X} BE:0x{:04X}", u16_le, u16_be)

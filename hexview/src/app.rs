@@ -300,6 +300,12 @@ impl App {
                 self.cursor.clear_selection();
             }
 
+            KeyCode::Char('$') => {
+                self.cursor.offset = self.cursor.current_row_end(self.buffer.len());
+                self.cursor.sub_offset = 0;
+                self.cursor.clear_selection();
+            }
+
             KeyCode::Char('o') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 if let Some(pos) = self.jump_list.back(self.cursor.offset) {
                     self.cursor.offset = pos;
@@ -893,7 +899,7 @@ impl App {
             String::new(),
             "─── NORMAL MODE ───".to_string(),
             pad("h/← l/→ j/↓ k/↑", "Move cursor"),
-            pad("0", "Go to row start"),
+            pad("0 / $", "Go to row start / end"),
             pad("gg / G", "Go to top / bottom"),
             pad("Ctrl-D / Ctrl-U", "Page down / up"),
             pad("i / a", "Insert at cursor / after cursor"),
@@ -1452,6 +1458,46 @@ mod tests {
 
         app.handle_key(key('0')).unwrap();
         assert_eq!(app.cursor.offset, 16);
+        assert_eq!(app.cursor.sub_offset, 0);
+    }
+
+    #[test]
+    fn test_dollar_goes_to_row_end() {
+        let mut app = App::new();
+        app.buffer = ByteBuffer::new(b"abcdefghijklmnopqrstuvwxyz");
+        // row 0: 0..15, row 1: 16..25 (EOF at 26)
+        // offset 5 is in row 0
+        app.cursor.offset = 5;
+
+        app.handle_key(key('$')).unwrap();
+        // row 0 ends at offset 15
+        assert_eq!(app.cursor.offset, 15);
+    }
+
+    #[test]
+    fn test_dollar_clamps_to_eof() {
+        let mut app = App::new();
+        app.buffer = ByteBuffer::new(b"abcdefghij"); // 10 bytes
+        // offset 5 is the only row (0..9)
+        app.cursor.offset = 5;
+
+        app.handle_key(key('$')).unwrap();
+        // end of row would be 15 but EOF is at 9
+        assert_eq!(app.cursor.offset, 9);
+    }
+
+    #[test]
+    fn test_nibble_dollar_goes_to_row_end() {
+        let mut app = App::new();
+        app.buffer = ByteBuffer::new(b"abcdefghijklmnopqrstuvwxyz");
+        app.cursor = Cursor::new(16);
+        app.cursor.offset = 20;
+        app.cursor.sub_offset = 1;
+        app.handle_key(key('z')).unwrap();
+
+        app.handle_key(key('$')).unwrap();
+        // row 1 ends at offset 25 (EOF - 1, since 26 bytes)
+        assert_eq!(app.cursor.offset, 25);
         assert_eq!(app.cursor.sub_offset, 0);
     }
 }
