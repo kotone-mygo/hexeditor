@@ -23,7 +23,12 @@ pub fn render_command_bar(frame: &mut Frame, area: Rect, app: &App) {
             (t, Style::default())
         }
         _ => {
-            if !app.search_results.is_empty() {
+            if !app.status_message.is_empty() {
+                (
+                    app.status_message.clone(),
+                    Style::default().fg(ratatui::style::Color::Yellow),
+                )
+            } else if !app.search_results.is_empty() {
                 (
                     format!(
                         "({}/{})",

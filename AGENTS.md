@@ -40,9 +40,10 @@ Terminal UI (depends on `hexcore`, `ratatui`, `crossterm`, `unicode-width`).
 | Module | Purpose |
 |--------|---------|
 | `main.rs` | Entry point, event loop |
-| `app.rs` | `App` struct (`nibble_mode`, `jump_list`, `show_help`, `help_scroll`, `help_lines`, `status_message`), `TabInfo` struct, `Mode` enum (`Normal`, `Insert`, `Replace`, `ReplaceOnce`, `VisualChar`, `VisualLine`, `VisualBlock`, `Command`, `Search`), key handlers, command parsing, search, help builder |
+| `app.rs` | `App` struct (`nibble_mode`, `jump_list`, `show_help`, `help_scroll`, `help_lines`, `status_message`, `show_config`, `config_selection`, `config_lines`), `TabInfo` struct, `Mode` enum (`Normal`, `Insert`, `Replace`, `ReplaceOnce`, `VisualChar`, `VisualLine`, `VisualBlock`, `Command`, `Search`), key handlers, command parsing, search, help builder, config panel handler |
 | `ui/mod.rs` | Layout orchestrator |
 | `ui/hex_view.rs` | Hex/ASCII rendering |
+| `ui/config_view.rs` | Config panel overlay — adjust settings at runtime |
 | `ui/status_bar.rs` | Bottom status line (mode, offset, endian preview) |
 | `ui/command_bar.rs` | Command/search input line — always rendered, acts as spacer in normal mode, shows persistent search result counter |
 | `ui/help_view.rs` | Help overlay |
@@ -86,3 +87,7 @@ Key handlers return `Result<(), String>`. Errors propagate via `?` and are displ
 - Public fields on structs (no getters/setters)
 - serde for config serialization (JSON)
 - `use` statements grouped: std → external → crate
+
+## Keybinding Updates
+
+Whenever adding or changing keybindings, the in-app help menu (`build_help_lines()` in `app.rs`) must be updated to match. The help view is the primary reference for users and commonly drifts out of sync with the actual key handlers.

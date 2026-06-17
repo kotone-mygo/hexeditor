@@ -80,32 +80,34 @@ pub fn render_hex_view(frame: &mut Frame, area: Rect, app: &App) {
 
         spans.push(Span::raw(" "));
 
-        for col in 0..bytes_per_row {
-            let byte_off = row_offset + col as u64;
-            if byte_off >= app.buffer.len() {
-                spans.push(Span::raw(" "));
-                continue;
-            }
-            let byte = app.buffer.read(byte_off, 1).map(|b| b[0]).unwrap_or(0);
-            let is_cursor = byte_off == cursor_offset;
-            let in_sel = app.cursor.in_selection(byte_off);
-            let ch = if byte.is_ascii_graphic() || byte == b' ' {
-                byte as char
-            } else {
-                '.'
-            };
+        if app.config.show_ascii {
+            for col in 0..bytes_per_row {
+                let byte_off = row_offset + col as u64;
+                if byte_off >= app.buffer.len() {
+                    spans.push(Span::raw(" "));
+                    continue;
+                }
+                let byte = app.buffer.read(byte_off, 1).map(|b| b[0]).unwrap_or(0);
+                let is_cursor = byte_off == cursor_offset;
+                let in_sel = app.cursor.in_selection(byte_off);
+                let ch = if byte.is_ascii_graphic() || byte == b' ' {
+                    byte as char
+                } else {
+                    '.'
+                };
 
-            let style = if is_cursor {
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD)
-            } else if in_sel {
-                Style::default().bg(Color::DarkGray)
-            } else {
-                Style::default()
-            };
-            spans.push(Span::styled(ch.to_string(), style));
+                let style = if is_cursor {
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
+                } else if in_sel {
+                    Style::default().bg(Color::DarkGray)
+                } else {
+                    Style::default()
+                };
+                spans.push(Span::styled(ch.to_string(), style));
+            }
         }
 
         let line_style = if row == current_row {

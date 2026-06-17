@@ -47,6 +47,9 @@ pub struct App {
     pub help_lines: Vec<String>,
     pub nibble_mode: bool,
     pub jump_list: JumpList,
+    pub show_config: bool,
+    pub config_selection: usize,
+    pub config_lines: Vec<String>,
     last_key: (KeyCode, Instant),
 }
 
@@ -73,6 +76,9 @@ impl App {
             help_lines: Vec::new(),
             nibble_mode: false,
             jump_list: JumpList::new(100),
+            show_config: false,
+            config_selection: 0,
+            config_lines: Vec::new(),
             last_key: (KeyCode::Null, Instant::now()),
         }
     }
@@ -140,6 +146,10 @@ impl App {
                 }
                 _ => Ok(()),
             };
+        }
+
+        if self.show_config {
+            return self.handle_config(key);
         }
 
         match key.code {
@@ -416,6 +426,13 @@ impl App {
                 self.command_line.clear();
             }
 
+            KeyCode::Char('=') => {
+                self.show_help = false;
+                self.show_config = true;
+                self.config_selection = 0;
+                self.build_config_lines();
+            }
+
             _ => {}
         }
         Ok(())
@@ -460,30 +477,12 @@ impl App {
                     }
                 } else {
                     let offset = self.cursor.offset;
-                    let old = if offset < self.buffer.len() {
-                        self.buffer
-                            .read(offset, 1)
-                            .map(|s| s.to_vec())
-                            .unwrap_or_default()
-                    } else {
-                        vec![]
+                    let cmd = EditCommand::Insert {
+                        offset,
+                        bytes: vec![c as u8],
                     };
-                    if self.config.use_overwrite_mode && offset < self.buffer.len() {
-                        let cmd = EditCommand::Overwrite {
-                            offset,
-                            old_bytes: old,
-                            new_bytes: vec![c as u8],
-                        };
-                        cmd.apply(&mut self.buffer)?;
-                        self.undo.push(cmd);
-                    } else {
-                        let cmd = EditCommand::Insert {
-                            offset,
-                            bytes: vec![c as u8],
-                        };
-                        cmd.apply(&mut self.buffer)?;
-                        self.undo.push(cmd);
-                    }
+                    cmd.apply(&mut self.buffer)?;
+                    self.undo.push(cmd);
                     if self.cursor.offset < self.buffer.len() {
                         self.cursor.offset += 1;
                     }
@@ -815,7 +814,15 @@ impl App {
         }
 
         match cmd {
-            "q" | "q!" => {
+            "q" => {
+                if self.buffer.is_modified() {
+                    self.status_message =
+                        "No write since last change (add ! to override)".to_string();
+                } else {
+                    self.quit_requested = true;
+                }
+            }
+            "q!" => {
                 self.quit_requested = true;
             }
             "w" => {
@@ -913,6 +920,7 @@ impl App {
             pad(":", "Enter command mode"),
             pad("v / V / Ctrl-V", "Visual char / line / block"),
             pad("z", "Toggle nibble mode (4-bit editing)"),
+            pad("=", "Open config panel"),
             String::new(),
             "─── INSERT MODE ───".to_string(),
             pad("<char>", "Insert byte at cursor"),
@@ -942,6 +950,73 @@ impl App {
             pad("<query> Enter", "Search text or hex (spaces optional, e.g. 48656C)"),
             pad("Esc", "Cancel"),
         ];
+    }
+
+    fn handle_config(&mut self, key: KeyEvent) -> Result<(), String> {
+        match key.code {
+            KeyCode::Esc => {
+                self.show_config = false;
+            }
+            KeyCode::Char('j') | KeyCode::Down => {
+                let max = 1;
+                if self.config_selection < max {
+                    self.config_selection += 1;
+                    self.build_config_lines();
+                }
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                if self.config_selection > 0 {
+                    self.config_selection -= 1;
+                    self.build_config_lines();
+                }
+            }
+            KeyCode::Enter => {
+                if self.config_selection == 1 {
+                    self.config.show_ascii = !self.config.show_ascii;
+                }
+                self.build_config_lines();
+            }
+            KeyCode::Char('+') => {
+                if self.config_selection == 0 {
+                    self.config.bytes_per_row = self.config.bytes_per_row.saturating_add(8).min(32);
+                    self.cursor.bytes_per_row = self.config.bytes_per_row;
+                }
+                self.build_config_lines();
+            }
+            KeyCode::Char('-') => {
+                if self.config_selection == 0 {
+                    self.config.bytes_per_row = self.config.bytes_per_row.saturating_sub(8).max(8);
+                    self.cursor.bytes_per_row = self.config.bytes_per_row;
+                }
+                self.build_config_lines();
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn build_config_lines(&mut self) {
+        let sel = self.config_selection;
+        let lines = &mut self.config_lines;
+        lines.clear();
+
+        lines.push("─── CONFIG ───".to_string());
+
+        let names = ["bytes_per_row", "show_ascii"];
+
+        for (i, name) in names.iter().enumerate() {
+            let marker = if i == sel { ">" } else { " " };
+            let val_str: String = match i {
+                0 => self.config.bytes_per_row.to_string(),
+                1 => (if self.config.show_ascii { "true" } else { "false" }).to_string(),
+                _ => unreachable!(),
+            };
+            let hint = if i == 0 { "  [-/+]" } else { "  [Enter]" };
+            lines.push(format!("{} {:24} {}{}", marker, name, val_str, hint));
+        }
+
+        lines.push(String::new());
+        lines.push("Esc: Close  j/k: Navigate  Enter: Toggle  +/-: Adjust".to_string());
     }
 }
 
@@ -1012,7 +1087,6 @@ mod tests {
     fn test_insert_mode() {
         let mut app = App::new();
         app.buffer = ByteBuffer::new(b"ac");
-        app.config.use_overwrite_mode = false;
 
         // Move cursor to position 1, then insert
         app.handle_key(key('l')).unwrap();
@@ -1465,6 +1539,7 @@ mod tests {
     fn test_dollar_goes_to_row_end() {
         let mut app = App::new();
         app.buffer = ByteBuffer::new(b"abcdefghijklmnopqrstuvwxyz");
+        app.cursor.bytes_per_row = 16;
         // row 0: 0..15, row 1: 16..25 (EOF at 26)
         // offset 5 is in row 0
         app.cursor.offset = 5;

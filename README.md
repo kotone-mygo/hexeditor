@@ -17,7 +17,7 @@ A terminal-based hex editor built with Rust, [ratatui](https://github.com/ratatu
 - Clipboard (yank/paste)
 - Multiple file tabs
 - Nibble mode (edit high/low nybble independently)
-- Configurable bytes-per-row and undo depth
+- Config panel (`=`) — temporarily adjust settings at runtime
 - Endian value preview (u16 LE/BE) in status bar
 - File encoding detection (UTF-8, UTF-16LE, Binary)
 - Persistent configuration file (JSON)
@@ -67,6 +67,7 @@ cargo run -- <file>
 | `:` | Enter command mode |
 | `v` / `V` / `Ctrl-V` | Visual char / line / block |
 | `z` | Toggle nibble mode (4-bit editing) |
+| `=` | Open config panel |
 
 ### Insert mode
 
@@ -106,6 +107,17 @@ cargo run -- <file>
 | `:q` | Close help overlay |
 | `Esc` | Cancel, return to Normal |
 
+### Config panel (`=`)
+
+| Key | Action |
+|-----|--------|
+| `j`/`↓` `k`/`↑` | Navigate items |
+| `Enter` | Toggle boolean (`show_ascii`) |
+| `+` / `-` | Adjust numeric (`bytes_per_row`, range 8-32) |
+| `Esc` | Close panel |
+
+Changes are in-memory only — reverted on restart.
+
 ### Search mode
 
 | Key | Action |
@@ -136,15 +148,15 @@ Settings are persisted to `~/.config/hexview/config.json`. Example:
 
 ```json
 {
-  "bytes_per_row": 16,
-  "max_undo_depth": 500,
+  "bytes_per_row": 32,
+  "max_undo_depth": 5000,
   "show_ascii": true,
   "use_overwrite_mode": false
 }
 ```
 
 Options:
-- `bytes_per_row` — Number of bytes displayed per row (default: `16`)
+- `bytes_per_row` — Number of bytes displayed per row (default: `32`, range 8-32)
 - `max_undo_depth` — Maximum undo history entries (default: `5000`)
 - `show_ascii` — Show ASCII panel alongside hex (default: `true`)
 - `mmap_threshold_mb` — File size threshold in MB for memory-mapped I/O (default: `500`)

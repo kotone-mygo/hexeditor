@@ -6,6 +6,7 @@ use ratatui::{
 use crate::app::App;
 
 mod command_bar;
+mod config_view;
 mod help_view;
 mod hex_view;
 mod status_bar;
@@ -41,6 +42,9 @@ pub fn render(app: &App, frame: &mut Frame) {
         hex_view::render_hex_view(frame, chunks[idx], app);
         idx += 1;
         help_view::render_help_view(frame, chunks[idx], app);
+        idx += 1;
+    } else if app.show_config {
+        config_view::render_config_view(frame, chunks[idx], app);
         idx += 1;
     } else {
         hex_view::render_hex_view(frame, chunks[idx], app);

@@ -14,10 +14,10 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             max_undo_depth: 5000,
-            bytes_per_row: 16,
+            bytes_per_row: 32,
             mmap_threshold_mb: 500,
             show_ascii: true,
-            use_overwrite_mode: true,
+            use_overwrite_mode: false,
         }
     }
 }
@@ -64,10 +64,10 @@ mod tests {
     fn test_config_defaults() {
         let cfg = Config::default();
         assert_eq!(cfg.max_undo_depth, 5000);
-        assert_eq!(cfg.bytes_per_row, 16);
+        assert_eq!(cfg.bytes_per_row, 32);
         assert_eq!(cfg.mmap_threshold_mb, 500);
         assert!(cfg.show_ascii);
-        assert!(cfg.use_overwrite_mode);
+        assert!(!cfg.use_overwrite_mode);
     }
 
     #[test]

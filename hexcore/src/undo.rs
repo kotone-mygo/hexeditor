@@ -47,6 +47,10 @@ impl UndoManager {
         self.undo_stack.push(cmd);
         Ok(offset)
     }
+
+    pub fn set_max_depth(&mut self, max_depth: usize) {
+        self.max_depth = max_depth;
+    }
 }
 
 #[cfg(test)]
