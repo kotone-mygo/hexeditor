@@ -780,6 +780,14 @@ impl App {
                 self.cursor.clear_selection();
                 self.mode = Mode::Normal;
             }
+            KeyCode::Char('0') => {
+                self.cursor.offset = self.cursor.current_row_start();
+                self.cursor.sub_offset = 0;
+            }
+            KeyCode::Char('$') => {
+                self.cursor.offset = self.cursor.current_row_end(self.buffer.len());
+                self.cursor.sub_offset = 0;
+            }
             KeyCode::Esc => {
                 self.cursor.clear_selection();
                 self.mode = Mode::Normal;
