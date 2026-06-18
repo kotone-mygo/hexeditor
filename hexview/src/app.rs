@@ -51,6 +51,32 @@ pub struct App {
     pub config_selection: usize,
     pub config_lines: Vec<String>,
     last_key: (KeyCode, Instant),
+    pub last_key_display: String,
+}
+
+fn key_event_display(key: &KeyEvent) -> String {
+    let prefix = if key.modifiers.contains(KeyModifiers::CONTROL) {
+        "Ctrl-"
+    } else {
+        ""
+    };
+    match key.code {
+        KeyCode::Char(c) => format!("{}{}", prefix, c),
+        KeyCode::Esc => format!("{}Esc", prefix),
+        KeyCode::Enter => format!("{}Enter", prefix),
+        KeyCode::Backspace => format!("{}Backspace", prefix),
+        KeyCode::Tab => format!("{}Tab", prefix),
+        KeyCode::Left => format!("{}Left", prefix),
+        KeyCode::Right => format!("{}Right", prefix),
+        KeyCode::Up => format!("{}Up", prefix),
+        KeyCode::Down => format!("{}Down", prefix),
+        KeyCode::Home => format!("{}Home", prefix),
+        KeyCode::End => format!("{}End", prefix),
+        KeyCode::PageUp => format!("{}PageUp", prefix),
+        KeyCode::PageDown => format!("{}PageDown", prefix),
+        KeyCode::Delete => format!("{}Del", prefix),
+        _ => String::new(),
+    }
 }
 
 impl App {
@@ -80,6 +106,7 @@ impl App {
             config_selection: 0,
             config_lines: Vec::new(),
             last_key: (KeyCode::Null, Instant::now()),
+            last_key_display: String::new(),
         }
     }
 
@@ -111,6 +138,18 @@ impl App {
     }
 
     pub fn handle_key(&mut self, key: KeyEvent) -> Result<(), String> {
+        if self.mode != Mode::Insert && self.mode != Mode::Command && self.mode != Mode::Search {
+            let now = Instant::now();
+            let is_double_tap = key.modifiers.is_empty()
+                && key.code == self.last_key.0
+                && now.duration_since(self.last_key.1).as_millis() < 500;
+            if is_double_tap {
+                let single = key_event_display(&key);
+                self.last_key_display = format!("{}{}", single, single);
+            } else {
+                self.last_key_display = key_event_display(&key);
+            }
+        }
         match self.mode {
             Mode::Normal => self.handle_normal(key),
             Mode::Insert => self.handle_insert(key),
@@ -876,6 +915,11 @@ impl App {
         }
         self.search_index = (self.search_index + 1) % self.search_results.len();
         self.cursor.offset = self.search_results[self.search_index];
+        self.status_message = format!(
+            "{}/{} matches",
+            self.search_index + 1,
+            self.search_results.len()
+        );
     }
 
     fn prev_search_result(&mut self) {
@@ -888,6 +932,11 @@ impl App {
             self.search_index -= 1;
         }
         self.cursor.offset = self.search_results[self.search_index];
+        self.status_message = format!(
+            "{}/{} matches",
+            self.search_index + 1,
+            self.search_results.len()
+        );
     }
 
     fn execute_command(&mut self, cmd: &str) -> Result<(), String> {

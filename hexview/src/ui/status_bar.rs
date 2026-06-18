@@ -56,10 +56,18 @@ pub fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
     let left = format!(" {}{} {} {} {}  ", mode_str, nibble_str, filename, modified, offset_str);
     let right = format!("{}{}", selection_str, endian_preview);
 
-    let line = Line::from(vec![
+    let mut spans = vec![
         Span::styled(left, Style::default().fg(Color::Cyan)),
         Span::styled(right, Style::default().fg(Color::DarkGray)),
-    ]);
+    ];
+    if !app.last_key_display.is_empty() {
+        spans.push(Span::styled(
+            format!(" [{}]", app.last_key_display),
+            Style::default().fg(Color::White),
+        ));
+    }
+
+    let line = Line::from(spans);
 
     frame.render_widget(Paragraph::new(line), area);
 }
