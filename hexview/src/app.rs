@@ -639,7 +639,55 @@ impl App {
                 }
             }
             KeyCode::Char('d') | KeyCode::Char('x') => {
-                if self.nibble_mode {
+                if self.cursor.selection_mode == SelectionMode::Block {
+                    if self.nibble_mode {
+                        let (top, bottom, left, right) = self.cursor.block_bounds(true);
+                        let first_byte = top * self.cursor.bytes_per_row + left / 2;
+                        let region_start = first_byte;
+                        let region_size = (self.buffer.len().saturating_sub(region_start)) as usize;
+                        let old_region = self.buffer.read(region_start, region_size)
+                            .map(|s| s.to_vec()).unwrap_or_default();
+                        for row in (top..=bottom).rev() {
+                            let row_off = row * self.cursor.bytes_per_row;
+                            for nib_col in (left..=right).rev() {
+                                let byte_off = row_off + nib_col / 2;
+                                let sub = (nib_col % 2) as u8;
+                                if byte_off < self.buffer.len() {
+                                    self.buffer.delete_nibble(byte_off, sub)?;
+                                }
+                            }
+                        }
+                        let new_region = self.buffer.read(region_start, region_size)
+                            .map(|s| s.to_vec()).unwrap_or_default();
+                        let cmd = EditCommand::Overwrite {
+                            offset: region_start,
+                            old_bytes: old_region,
+                            new_bytes: new_region,
+                        };
+                        self.undo.push(cmd);
+                    } else {
+                        let (top, bottom, left, right) = self.cursor.block_bounds(false);
+                        for row in top..=bottom {
+                            let row_off = row * self.cursor.bytes_per_row;
+                            let seg_start = row_off + left;
+                            let seg_end = row_off + right;
+                            if seg_start >= self.buffer.len() { continue; }
+                            let seg_len = (seg_end - seg_start + 1).min(self.buffer.len() - seg_start) as usize;
+                            if seg_len == 0 { continue; }
+                            let old = self.buffer.read(seg_start, seg_len)
+                                .map(|s| s.to_vec()).unwrap_or_default();
+                            let new = vec![0u8; seg_len];
+                            let cmd = EditCommand::Overwrite {
+                                offset: seg_start,
+                                old_bytes: old,
+                                new_bytes: new,
+                            };
+                            cmd.apply(&mut self.buffer)?;
+                            self.undo.push(cmd);
+                        }
+                    }
+                    self.cursor.offset = 0.min(self.buffer.len().saturating_sub(1));
+                } else if self.nibble_mode {
                     let anchor_off = self.cursor.selection_anchor.unwrap_or(self.cursor.offset);
                     let anchor_sub = self.cursor.selection_sub_anchor.unwrap_or(0);
                     let cur_off = self.cursor.offset;
@@ -686,7 +734,40 @@ impl App {
                 self.mode = Mode::Normal;
             }
             KeyCode::Char('y') => {
-                if let (Some(start), Some(end)) =
+                if self.cursor.selection_mode == SelectionMode::Block {
+                    if self.nibble_mode {
+                        let (top, bottom, left, right) = self.cursor.block_bounds(true);
+                        let mut data = Vec::new();
+                        for row in top..=bottom {
+                            let row_off = row * self.cursor.bytes_per_row;
+                            for nib_col in left..=right {
+                                let byte_off = row_off + nib_col / 2;
+                                if byte_off >= self.buffer.len() { continue; }
+                                let byte = self.buffer.read(byte_off, 1)
+                                    .map(|b| b[0]).unwrap_or(0);
+                                let nib = if nib_col % 2 == 0 { byte >> 4 } else { byte & 0x0F };
+                                data.push(nib);
+                            }
+                        }
+                        self.clipboard = data;
+                        self.status_message = format!("Yanked {} nibbles", self.clipboard.len());
+                    } else {
+                        let (top, bottom, left, right) = self.cursor.block_bounds(false);
+                        let mut data = Vec::new();
+                        for row in top..=bottom {
+                            let row_off = row * self.cursor.bytes_per_row;
+                            for col in left..=right {
+                                let byte_off = row_off + col;
+                                if byte_off >= self.buffer.len() { continue; }
+                                if let Ok(b) = self.buffer.read(byte_off, 1) {
+                                    data.push(b[0]);
+                                }
+                            }
+                        }
+                        self.clipboard = data;
+                        self.status_message = format!("Yanked {} bytes", self.clipboard.len());
+                    }
+                } else if let (Some(start), Some(end)) =
                     (self.cursor.selection_start(), self.cursor.selection_end())
                 {
                     let len = (end - start + 1) as usize;
