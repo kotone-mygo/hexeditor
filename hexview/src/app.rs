@@ -686,7 +686,7 @@ impl App {
                             self.undo.push(cmd);
                         }
                     }
-                    self.cursor.offset = 0.min(self.buffer.len().saturating_sub(1));
+                    self.cursor.offset = self.cursor.offset.min(self.buffer.len().saturating_sub(1));
                 } else if self.nibble_mode {
                     let anchor_off = self.cursor.selection_anchor.unwrap_or(self.cursor.offset);
                     let anchor_sub = self.cursor.selection_sub_anchor.unwrap_or(0);
