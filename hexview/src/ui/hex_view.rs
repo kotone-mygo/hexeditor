@@ -29,9 +29,14 @@ pub fn render_hex_view(frame: &mut Frame, area: Rect, app: &App) {
 
         let mut spans = Vec::new();
 
+        let addr_style = if row == current_row {
+            Style::default().fg(Color::White)
+        } else {
+            Style::default().fg(Color::DarkGray)
+        };
         spans.push(Span::styled(
             format!("{:08X}  ", row_offset),
-            Style::default().fg(Color::DarkGray),
+            addr_style,
         ));
 
         for col in 0..bytes_per_row {
@@ -46,7 +51,7 @@ pub fn render_hex_view(frame: &mut Frame, area: Rect, app: &App) {
 
             let byte = app.buffer.read(byte_off, 1).map(|b| b[0]).unwrap_or(0);
             let is_cursor = byte_off == cursor_offset;
-            let in_sel = app.cursor.in_selection(byte_off);
+            let in_sel = app.cursor.in_selection(byte_off, app.buffer.len(), app.nibble_mode, 0);
 
             let cursor_style = Style::default()
                 .fg(Color::Black)
@@ -89,7 +94,7 @@ pub fn render_hex_view(frame: &mut Frame, area: Rect, app: &App) {
                 }
                 let byte = app.buffer.read(byte_off, 1).map(|b| b[0]).unwrap_or(0);
                 let is_cursor = byte_off == cursor_offset;
-                let in_sel = app.cursor.in_selection(byte_off);
+                let in_sel = app.cursor.in_selection(byte_off, app.buffer.len(), app.nibble_mode, 0);
                 let ch = if byte.is_ascii_graphic() || byte == b' ' {
                     byte as char
                 } else {
