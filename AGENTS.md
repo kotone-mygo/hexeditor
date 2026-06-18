@@ -75,6 +75,12 @@ impl EditCommand {
 
 Public fields on `Cursor` (`offset`, `sub_offset`, `bytes_per_row`, `selection_anchor`, `selection_sub_anchor: Option<u8>`, `selection_mode`). Nibble mode adds a sub-byte offset (0 = high nybble, 1 = low nybble). Movement methods clamp to `[0, file_size-1]`.
 
+Selection helpers are mode-aware:
+- `selection_start()`/`selection_end()` — `Char`: linear min/max; `Line`: aligned to full row boundaries; `Block`: top-left/bottom-right corners
+- `in_selection(offset, file_size, nibble_mode, sub_offset)` — `Block` checks row+column rectangle, `Char`/`Line` checks linear span
+- `block_bounds(nibble_mode)` — returns `(top, bottom, left, right)` rectangle for Block mode
+- `row(offset)` — returns row number for a byte offset
+
 ### Error handling
 
 Key handlers return `Result<(), String>`. Errors propagate via `?` and are displayed in the status bar.

@@ -88,9 +88,15 @@ cargo run -- <file>
 
 | Key | Action |
 |-----|--------|
+| `v` / `V` / `Ctrl-V` | Visual char / line / block |
 | `h`/`j`/`k`/`l` | Extend selection |
+| `0` / `$` | Go to row start / end |
 | `d` / `x` / `y` | Delete / yank selection |
 | `Esc` | Cancel selection |
+
+- **Visual char** (`v`): select individual bytes (or nibbles in nibble mode)
+- **Visual line** (`V`): select entire rows, keeps cursor column position
+- **Visual block** (`Ctrl-V`): select rectangular region, nibble-aware when in nibble mode
 
 ### Command mode
 
