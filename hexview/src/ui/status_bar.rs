@@ -34,7 +34,7 @@ pub fn render_status_bar(frame: &mut Frame, area: Rect, app: &App) {
         let rows = bottom - top + 1;
         let cols = right - left + 1;
         format!(" Sel:{}", rows * cols)
-    } else if let (Some(s), Some(e)) = (app.cursor.selection_start(), app.cursor.selection_end()) {
+    } else if let (Some(s), Some(e)) = (app.cursor.selection_start(), app.cursor.selection_end(app.buffer.len())) {
         format!(" Sel:{}", e - s + 1)
     } else {
         String::new()

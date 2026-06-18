@@ -70,13 +70,13 @@ impl Cursor {
         }
     }
 
-    pub fn selection_end(&self) -> Option<u64> {
+    pub fn selection_end(&self, file_size: u64) -> Option<u64> {
         match self.selection_mode {
             SelectionMode::Line => {
                 let anchor = self.selection_anchor?;
                 let end_row = self.row(anchor).max(self.row(self.offset));
                 let end = end_row * self.bytes_per_row + self.bytes_per_row - 1;
-                Some(end)
+                Some(end.min(file_size.saturating_sub(1)))
             }
             _ => {
                 let anchor = self.selection_anchor?;
@@ -104,7 +104,7 @@ impl Cursor {
         (top, bottom, left, right)
     }
 
-    pub fn in_selection(&self, offset: u64, _file_size: u64, nibble_mode: bool, sub_offset: u8) -> bool {
+    pub fn in_selection(&self, offset: u64, file_size: u64, nibble_mode: bool, sub_offset: u8) -> bool {
         match self.selection_mode {
             SelectionMode::Block => {
                 let (top, bottom, left, right) = self.block_bounds(nibble_mode);
@@ -121,7 +121,7 @@ impl Cursor {
             SelectionMode::None => false,
             _ => {
                 let Some(start) = self.selection_start() else { return false; };
-                let Some(end) = self.selection_end() else { return false; };
+                let Some(end) = self.selection_end(file_size) else { return false; };
                 offset >= start && offset <= end
             }
         }
@@ -272,7 +272,7 @@ mod tests {
         cursor.start_selection(SelectionMode::Line);
         cursor.move_down(100);
         let s = cursor.selection_start().unwrap();
-        let e = cursor.selection_end().unwrap();
+        let e = cursor.selection_end(100).unwrap();
         // Selection spans from row 0 start to row 1 end
         assert_eq!(s, 0);
         assert_eq!(e, 31);
@@ -322,9 +322,28 @@ mod tests {
         cursor.move_up(100); // now row 0, col 4
         // Anchor at row 1, cursor at row 0. Line selection spans rows 0-1
         let s = cursor.selection_start().unwrap();
-        let e = cursor.selection_end().unwrap();
+        let e = cursor.selection_end(100).unwrap();
         assert_eq!(s, 0);
         assert_eq!(e, 31);
+    }
+
+    #[test]
+    fn test_selection_line_end_clamps_to_file_size() {
+        let mut cursor = Cursor::new(16);
+        cursor.offset = 18;  // row 1, col 2, file of 20 bytes (row 1 has only 4 bytes: 16-19)
+        cursor.start_selection(SelectionMode::Line);
+        // Single row selection on a partial row
+        let s = cursor.selection_start().unwrap();
+        let e = cursor.selection_end(20).unwrap();
+        assert_eq!(s, 16);
+        assert_eq!(e, 19);  // clamped to file_size - 1, not 31
+        assert_eq!(e - s + 1, 4);  // only 4 yankable bytes
+
+        // in_selection should work correctly too
+        assert!(cursor.in_selection(16, 20, false, 0));
+        assert!(cursor.in_selection(19, 20, false, 0));
+        assert!(!cursor.in_selection(20, 20, false, 0));
+        assert!(!cursor.in_selection(15, 20, false, 0));
     }
 
     #[test]
@@ -335,7 +354,7 @@ mod tests {
         cursor.move_down(100); // now row 1, col 5
         // Yank should capture rows 0-1 = 32 bytes (offsets 0-31)
         let s = cursor.selection_start().unwrap();
-        let e = cursor.selection_end().unwrap();
+        let e = cursor.selection_end(100).unwrap();
         assert_eq!(s, 0);
         assert_eq!(e, 31);
         assert_eq!(e - s + 1, 32);

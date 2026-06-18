@@ -359,7 +359,7 @@ impl App {
 
             KeyCode::Char('y') => {
                 if let (Some(start), Some(end)) =
-                    (self.cursor.selection_start(), self.cursor.selection_end())
+                    (self.cursor.selection_start(), self.cursor.selection_end(self.buffer.len()))
                 {
                     let len = (end - start + 1) as usize;
                     if let Ok(data) = self.buffer.read(start, len) {
@@ -714,7 +714,7 @@ impl App {
                     self.cursor.offset = start_byte.min(self.buffer.len().saturating_sub(1));
                     self.cursor.sub_offset = 0;
                 } else if let (Some(start), Some(end)) =
-                    (self.cursor.selection_start(), self.cursor.selection_end())
+                    (self.cursor.selection_start(), self.cursor.selection_end(self.buffer.len()))
                 {
                     let len = (end - start + 1) as usize;
                     let bytes = self
@@ -768,7 +768,7 @@ impl App {
                         self.status_message = format!("Yanked {} bytes", self.clipboard.len());
                     }
                 } else if let (Some(start), Some(end)) =
-                    (self.cursor.selection_start(), self.cursor.selection_end())
+                    (self.cursor.selection_start(), self.cursor.selection_end(self.buffer.len()))
                 {
                     let len = (end - start + 1) as usize;
                     if let Ok(data) = self.buffer.read(start, len) {
