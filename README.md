@@ -118,8 +118,7 @@ cargo run -- <file>
 | Key | Action |
 |-----|--------|
 | `j`/`↓` `k`/`↑` | Navigate items |
-| `Enter` | Toggle boolean (`show_ascii`) |
-| `+` / `-` | Adjust numeric (`bytes_per_row`, range 8-32) |
+| `h`/`←` `l`/`→` | Toggle boolean / adjust numeric |
 | `Esc` | Close panel |
 
 Changes are in-memory only — reverted on restart.
