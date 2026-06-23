@@ -1110,23 +1110,21 @@ impl App {
                     self.build_config_lines();
                 }
             }
-            KeyCode::Enter => {
-                if self.config_selection == 1 {
-                    self.config.show_ascii = !self.config.show_ascii;
-                }
-                self.build_config_lines();
-            }
-            KeyCode::Char('+') => {
+            KeyCode::Char('l') | KeyCode::Right => {
                 if self.config_selection == 0 {
                     self.config.bytes_per_row = self.config.bytes_per_row.saturating_add(8).min(32);
                     self.cursor.bytes_per_row = self.config.bytes_per_row;
+                } else if self.config_selection == 1 {
+                    self.config.show_ascii = true;
                 }
                 self.build_config_lines();
             }
-            KeyCode::Char('-') => {
+            KeyCode::Char('h') | KeyCode::Left => {
                 if self.config_selection == 0 {
                     self.config.bytes_per_row = self.config.bytes_per_row.saturating_sub(8).max(8);
                     self.cursor.bytes_per_row = self.config.bytes_per_row;
+                } else if self.config_selection == 1 {
+                    self.config.show_ascii = false;
                 }
                 self.build_config_lines();
             }
@@ -1151,12 +1149,11 @@ impl App {
                 1 => (if self.config.show_ascii { "true" } else { "false" }).to_string(),
                 _ => unreachable!(),
             };
-            let hint = if i == 0 { "  [-/+]" } else { "  [Enter]" };
-            lines.push(format!("{} {:24} {}{}", marker, name, val_str, hint));
+            lines.push(format!("{} {:24} {}", marker, name, val_str));
         }
 
         lines.push(String::new());
-        lines.push("Esc: Close  j/k: Navigate  Enter: Toggle  +/-: Adjust".to_string());
+        lines.push("Esc: Close  j/k: Navigate  h/l: Adjust/Toggle".to_string());
     }
 }
 

@@ -27,11 +27,6 @@ pub fn render_config_view(frame: &mut Frame, area: Rect, app: &App) {
                         .bg(Color::Yellow)
                         .add_modifier(Modifier::BOLD),
                 ))
-            } else if text.starts_with("Esc:") {
-                Line::from(Span::styled(
-                    text.clone(),
-                    Style::default().fg(Color::DarkGray),
-                ))
             } else if text.is_empty() {
                 Line::from("")
             } else {
